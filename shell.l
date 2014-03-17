@@ -14,12 +14,14 @@
 "<>"											{ return LESSGREAT; }
 "<<-"											{ return DLESSDASH; }
 [0-9]*											{ return IO_NUMBER; }
-[a-zA-Z]+_?										{ 
+[a-zA-Z\-/]+									{ 
 													yylval.word = (char *) malloc(sizeof(char) * 256);
 													strcpy(yylval.word, yytext);
 													return WORD;
 												}
-[ \t\r\n]+										{ ; }
+";"												{ return ';'; }
+"\n"											{ return '\n'; }
+[ \t]+											{ ; }
 .												{ 
 													printf("Unsupported character: ");
 													ECHO; printf("\n");

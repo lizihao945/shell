@@ -1,6 +1,5 @@
 /* C declarations here */
 %{
-    char *yytext;
     void yyerror(char *s);
     #include <stdio.h>
     #include <string.h>
@@ -14,7 +13,7 @@
     int number;
     char *word;
     wordlist_t *wordlist;
-    command_t *command;
+    simple_cmd_t *command;
     redirect_t *redirect;
     element_t element;
 }
@@ -29,72 +28,53 @@
 %token <command> COND_CMD
 %token NEWLINE
 %token IO_NUMBER
+%token yacc_EOF
 
-%type <command> command simple_command
+%type <command> simple_command
 %type <element> simple_command_element
 
-%start command
+%start init
 %%
 /* productions and actions here */
 /* should use left recursion */
 /* The default action is {$$=$1;} */
-/*  */                          /* command */
-command                         : simple_command                        { exec_cmd($1); }
+
+init                            : simple_command '\n'                   { parsed_command = $1; }
                                 ;
 /* command */                   /* element */
-simple_command                  : simple_command_element                { $$ = gen_simple_cmd($1, (command_t *)0); }
+simple_command                  : simple_command_element                { $$ = gen_simple_cmd($1, (simple_cmd_t *)0); }
                                 | simple_command simple_command_element { $$ = gen_simple_cmd($2, $1); }
                                 ;
 /* element */                   /* word */
 simple_command_element          : WORD                                  { $$.word = $1; $$.redirect = 0; }
                                 ;
 %%
-/* C code here */
-int main(void) {
-	/* initial jobs here */
-	return yyparse();
-}
 
 void yyerror(char *s) {
 	fprintf(stderr, "%s\n", s);
 }
 
-int is_built_in(command_t *command) {
-    return 0;
-}
-
-command_t *gen_simple_cmd(element_t element, command_t *command) {
-    command_t *rt;
-    simple_cmd_t *tmp;
-    // just bare command
+simple_cmd_t *gen_simple_cmd(element_t element, simple_cmd_t *command) {
+    simple_cmd_t *rt;
+    wordlist_t *tmp;
+    // generate a bare command and append info later
     if (command == 0) {
-        rt = (command_t *) malloc(sizeof(command_t));
-        rt->simple_cmd = tmp = (simple_cmd_t *) malloc(sizeof(simple_cmd_t *));
+        rt = (simple_cmd_t *) malloc(sizeof(simple_cmd_t));
+        rt->words = (wordlist_t *) malloc(sizeof(wordlist_t));
+        rt->words->word = element.word;
+        rt->words->next = (wordlist_t *)NULL;
         rt->redirects = (redirect_t *)NULL;
         return rt;
     }
-    // 
+    // remember the arguments are added backwards
     if (element.word) {
+        printf("%s\n", element.word);
+        tmp = (wordlist_t *) malloc(sizeof(wordlist_t));
+        tmp->word = element.word;
+        tmp->next = rt->words;
+        rt->words = tmp;
+    } else if (element.redirect) { // redirection
 
     }
-}
-
-void exec_cmd(command_t *command) {
-    int child_pid;
-    char **args;
-    args = (char **) malloc(sizeof(char*) * 2);
-    *args = (char *) malloc(sizeof(char) * 256);
-    *args = "";
-    if (is_built_in(command)) {
-    } else {
-        if ((child_pid = fork()) < 0) {
-            fprintf(stderr, "fork error!\n");
-        } else if (child_pid == 0) { // child
-            //execlp(command->simple_cmd->words[0], command->simple_cmd->words, (char *)0);
-            *args = "/bin/ls";
-            execlp("ls", *args, (char *)0);
-        } else {
-            waitpid(child_pid, NULL, 0);
-        }
-    }
+    return rt;
 }

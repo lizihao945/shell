@@ -65,7 +65,6 @@
 /* Line 371 of yacc.c  */
 #line 2 "shell.y"
 
-    char *yytext;
     void yyerror(char *s);
     #include <stdio.h>
     #include <string.h>
@@ -74,7 +73,7 @@
     #include "shell.h"
 
 /* Line 371 of yacc.c  */
-#line 78 "y.tab.c"
+#line 77 "y.tab.c"
 
 # ifndef YY_NULL
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -123,7 +122,8 @@ extern int yydebug;
      NUMBER = 268,
      COND_CMD = 269,
      NEWLINE = 270,
-     IO_NUMBER = 271
+     IO_NUMBER = 271,
+     yacc_EOF = 272
    };
 #endif
 /* Tokens.  */
@@ -141,6 +141,7 @@ extern int yydebug;
 #define COND_CMD 269
 #define NEWLINE 270
 #define IO_NUMBER 271
+#define yacc_EOF 272
 
 
 
@@ -148,18 +149,18 @@ extern int yydebug;
 typedef union YYSTYPE
 {
 /* Line 387 of yacc.c  */
-#line 13 "shell.y"
+#line 12 "shell.y"
 
     int number;
     char *word;
     wordlist_t *wordlist;
-    command_t *command;
+    simple_cmd_t *command;
     redirect_t *redirect;
     element_t element;
 
 
 /* Line 387 of yacc.c  */
-#line 163 "y.tab.c"
+#line 164 "y.tab.c"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
@@ -187,7 +188,7 @@ int yyparse ();
 /* Copy the second part of user declarations.  */
 
 /* Line 390 of yacc.c  */
-#line 191 "y.tab.c"
+#line 192 "y.tab.c"
 
 #ifdef short
 # undef short
@@ -416,20 +417,20 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  5
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   2
+#define YYLAST   6
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  17
+#define YYNTOKENS  19
 /* YYNNTS -- Number of nonterminals.  */
 #define YYNNTS  4
 /* YYNRULES -- Number of rules.  */
 #define YYNRULES  5
 /* YYNRULES -- Number of states.  */
-#define YYNSTATES  7
+#define YYNSTATES  8
 
 /* YYTRANSLATE(YYLEX) -- Bison symbol number corresponding to YYLEX.  */
 #define YYUNDEFTOK  2
-#define YYMAXUTOK   271
+#define YYMAXUTOK   272
 
 #define YYTRANSLATE(YYX)						\
   ((unsigned int) (YYX) <= YYMAXUTOK ? yytranslate[YYX] : YYUNDEFTOK)
@@ -438,7 +439,7 @@ union yyalloc
 static const yytype_uint8 yytranslate[] =
 {
        0,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+      18,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
@@ -464,7 +465,7 @@ static const yytype_uint8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
        5,     6,     7,     8,     9,    10,    11,    12,    13,    14,
-      15,    16
+      15,    16,    17
 };
 
 #if YYDEBUG
@@ -472,14 +473,14 @@ static const yytype_uint8 yytranslate[] =
    YYRHS.  */
 static const yytype_uint8 yyprhs[] =
 {
-       0,     0,     3,     5,     7,    10
+       0,     0,     3,     6,     8,    11
 };
 
 /* YYRHS -- A `-1'-separated list of the rules' RHS.  */
 static const yytype_int8 yyrhs[] =
 {
-      18,     0,    -1,    19,    -1,    20,    -1,    19,    20,    -1,
-      12,    -1
+      20,     0,    -1,    21,    18,    -1,    22,    -1,    21,    22,
+      -1,    12,    -1
 };
 
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
@@ -496,8 +497,8 @@ static const char *const yytname[] =
 {
   "$end", "error", "$undefined", "AND_IF", "OR_IF", "DSEMI", "DLESS",
   "DGREAT", "LESSAND", "GREATAND", "LESSGREAT", "DLESSDASH", "WORD",
-  "NUMBER", "COND_CMD", "NEWLINE", "IO_NUMBER", "$accept", "command",
-  "simple_command", "simple_command_element", YY_NULL
+  "NUMBER", "COND_CMD", "NEWLINE", "IO_NUMBER", "yacc_EOF", "'\\n'",
+  "$accept", "init", "simple_command", "simple_command_element", YY_NULL
 };
 #endif
 
@@ -507,20 +508,20 @@ static const char *const yytname[] =
 static const yytype_uint16 yytoknum[] =
 {
        0,   256,   257,   258,   259,   260,   261,   262,   263,   264,
-     265,   266,   267,   268,   269,   270,   271
+     265,   266,   267,   268,   269,   270,   271,   272,    10
 };
 # endif
 
 /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
 static const yytype_uint8 yyr1[] =
 {
-       0,    17,    18,    19,    19,    20
+       0,    19,    20,    21,    21,    22
 };
 
 /* YYR2[YYN] -- Number of symbols composing right hand side of rule YYN.  */
 static const yytype_uint8 yyr2[] =
 {
-       0,     2,     1,     1,     2,     1
+       0,     2,     2,     1,     2,     1
 };
 
 /* YYDEFACT[STATE-NAME] -- Default reduction number in state STATE-NUM.
@@ -528,7 +529,7 @@ static const yytype_uint8 yyr2[] =
    means the default is an error.  */
 static const yytype_uint8 yydefact[] =
 {
-       0,     5,     0,     2,     3,     1,     4
+       0,     5,     0,     0,     3,     1,     2,     4
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
@@ -542,13 +543,13 @@ static const yytype_int8 yydefgoto[] =
 #define YYPACT_NINF -13
 static const yytype_int8 yypact[] =
 {
-     -12,   -13,     1,   -12,   -13,   -13,   -13
+     -11,   -13,     2,   -12,   -13,   -13,   -13,   -13
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -13,   -13,   -13,    -1
+     -13,   -13,   -13,     0
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]].  What to do in state STATE-NUM.  If
@@ -557,7 +558,7 @@ static const yytype_int8 yypgoto[] =
 #define YYTABLE_NINF -1
 static const yytype_uint8 yytable[] =
 {
-       1,     5,     6
+       1,     1,     5,     7,     0,     0,     6
 };
 
 #define yypact_value_is_default(Yystate) \
@@ -566,16 +567,16 @@ static const yytype_uint8 yytable[] =
 #define yytable_value_is_error(Yytable_value) \
   YYID (0)
 
-static const yytype_uint8 yycheck[] =
+static const yytype_int8 yycheck[] =
 {
-      12,     0,     3
+      12,    12,     0,     3,    -1,    -1,    18
 };
 
 /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
    symbol of state STATE-NUM.  */
 static const yytype_uint8 yystos[] =
 {
-       0,    12,    18,    19,    20,     0,    20
+       0,    12,    20,    21,    22,     0,    18,    22
 };
 
 #define yyerrok		(yyerrstatus = 0)
@@ -1369,13 +1370,13 @@ yyreduce:
         case 2:
 /* Line 1787 of yacc.c  */
 #line 42 "shell.y"
-    { exec_cmd((yyvsp[(1) - (1)].command)); }
+    { parsed_command = (yyvsp[(1) - (2)].command); }
     break;
 
   case 3:
 /* Line 1787 of yacc.c  */
 #line 45 "shell.y"
-    { (yyval.command) = gen_simple_cmd((yyvsp[(1) - (1)].element), (command_t *)0); }
+    { (yyval.command) = gen_simple_cmd((yyvsp[(1) - (1)].element), (simple_cmd_t *)0); }
     break;
 
   case 4:
@@ -1392,7 +1393,7 @@ yyreduce:
 
 
 /* Line 1787 of yacc.c  */
-#line 1396 "y.tab.c"
+#line 1397 "y.tab.c"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1626,52 +1627,32 @@ yyreturn:
 /* Line 2050 of yacc.c  */
 #line 51 "shell.y"
 
-/* C code here */
-int main(void) {
-	/* initial jobs here */
-	return yyparse();
-}
 
 void yyerror(char *s) {
 	fprintf(stderr, "%s\n", s);
 }
 
-int is_built_in(command_t *command) {
-    return 0;
-}
-
-command_t *gen_simple_cmd(element_t element, command_t *command) {
-    command_t *rt;
-    simple_cmd_t *tmp;
-    // just bare command
+simple_cmd_t *gen_simple_cmd(element_t element, simple_cmd_t *command) {
+    simple_cmd_t *rt;
+    wordlist_t *tmp;
+    // generate a bare command and append info later
     if (command == 0) {
-        rt = (command_t *) malloc(sizeof(command_t));
-        rt->simple_cmd = tmp = (simple_cmd_t *) malloc(sizeof(simple_cmd_t *));
+        rt = (simple_cmd_t *) malloc(sizeof(simple_cmd_t));
+        rt->words = (wordlist_t *) malloc(sizeof(wordlist_t));
+        rt->words->word = element.word;
+        rt->words->next = (wordlist_t *)NULL;
         rt->redirects = (redirect_t *)NULL;
         return rt;
     }
-    // 
+    // remember the arguments are added backwards
     if (element.word) {
+        printf("%s\n", element.word);
+        tmp = (wordlist_t *) malloc(sizeof(wordlist_t));
+        tmp->word = element.word;
+        tmp->next = rt->words;
+        rt->words = tmp;
+    } else if (element.redirect) { // redirection
 
     }
-}
-
-void exec_cmd(command_t *command) {
-    int child_pid;
-    char **args;
-    args = (char **) malloc(sizeof(char*) * 2);
-    *args = (char *) malloc(sizeof(char) * 256);
-    *args = "";
-    if (is_built_in(command)) {
-    } else {
-        if ((child_pid = fork()) < 0) {
-            fprintf(stderr, "fork error!\n");
-        } else if (child_pid == 0) { // child
-            //execlp(command->simple_cmd->words[0], command->simple_cmd->words, (char *)0);
-            *args = "/bin/ls";
-            execlp("ls", *args, (char *)0);
-        } else {
-            //waitpid(child_pid, NULL, 0);
-        }
-    }
+    return rt;
 }

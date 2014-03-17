@@ -59,7 +59,8 @@ extern int yydebug;
      NUMBER = 268,
      COND_CMD = 269,
      NEWLINE = 270,
-     IO_NUMBER = 271
+     IO_NUMBER = 271,
+     yacc_EOF = 272
    };
 #endif
 /* Tokens.  */
@@ -77,6 +78,7 @@ extern int yydebug;
 #define COND_CMD 269
 #define NEWLINE 270
 #define IO_NUMBER 271
+#define yacc_EOF 272
 
 
 
@@ -84,18 +86,18 @@ extern int yydebug;
 typedef union YYSTYPE
 {
 /* Line 2053 of yacc.c  */
-#line 13 "shell.y"
+#line 12 "shell.y"
 
     int number;
     char *word;
     wordlist_t *wordlist;
-    command_t *command;
+    simple_cmd_t *command;
     redirect_t *redirect;
     element_t element;
 
 
 /* Line 2053 of yacc.c  */
-#line 99 "y.tab.h"
+#line 101 "y.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

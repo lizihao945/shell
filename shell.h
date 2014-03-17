@@ -23,16 +23,17 @@
         redirect_t *redirects;
     } simple_cmd_t;
 
-    typedef struct command_st {
-        simple_cmd_t *simple_cmd;
-        redirect_t *redirects;
-    } command_t;
-
     typedef struct element_st {
         char *word;
         redirect_t *redirect;
     } element_t;
 
-    void exec_cmd(command_t *command);
-    command_t *gen_simple_cmd(element_t element, command_t *command);
+    extern simple_cmd_t *parsed_command;
+
+    void exec_cmd(simple_cmd_t *command);
+    void print_prompt();
+    simple_cmd_t *gen_simple_cmd(element_t element, simple_cmd_t *command);
+    int wordlist_length(wordlist_t *words);
+	char **gen_args(wordlist_t *words);
+    int is_built_in(simple_cmd_t *command);
 #endif
