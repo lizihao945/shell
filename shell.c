@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 #include "shell.h"
 
 simple_cmd_t *parsed_command;
@@ -68,7 +70,7 @@ void exec_cmd(simple_cmd_t *command) {
         } else if (child_pid == 0) { // child            
             //execlp(command->simple_cmd->words[0], command->simple_cmd->words, (char *)0);
             args = gen_args(command->words);
-            exit(execve(command->words->word, args, (char **)0));
+            exit(execvp(command->words->word, args));
         } else {
             waitpid(child_pid, NULL, 0);
         }
@@ -79,20 +81,28 @@ void eval_loop() {
     char *tmp, c;
     int i;
     tmp = (char *) malloc(sizeof(char) * 256);
-	while (1) {
-		printf("my_shell$ ");
+	while ((tmp = readline("myshell$ ")) != NULL) {
+		//printf("my_shell$ ");
         // fill the buffer
-        i = 0;
-        while ((c = getchar()) != '\n') tmp[i++] = c;   // ASCII 10 stands for '\n'
+        /*i = 0;
+        while ((c = getchar()) != '\n') {   // ASCII 10 stands for '\n'
+            if (c == EOF) {
+                printf("\n");
+                exit(0);
+            }
+            tmp[i++] = c;
+        }
         tmp[i] = '\n';
         tmp[i + 1] = '\0';
-        if (!(strcmp(tmp, "\n"))) continue;
+        if (!(strcmp(tmp, "\n"))) continue;*/
+        add_history(tmp);
         yy_scan_string(tmp);
 		yyparse();
         parsed_command->words = reverse_command(parsed_command->words);
         //describe_command(parsed_command);
         exec_cmd(parsed_command);
 	}
+    free(tmp);
 }
 
 int main(void) {

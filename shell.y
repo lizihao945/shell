@@ -40,7 +40,7 @@
 /* should use left recursion */
 /* The default action is {$$=$1;} */
 
-init                            : simple_command '\n'                   { parsed_command = $1; }
+init                            : simple_command                        { parsed_command = $1; }
                                 ;
 /* command */                   /* element */
 simple_command                  : simple_command_element                { $$ = gen_simple_cmd($1, (simple_cmd_t *)0); }
