@@ -34,6 +34,26 @@ char **gen_args(wordlist_t *words) {
     return rt;
 }
 
+wordlist_t *reverse_command(wordlist_t *words) {
+    wordlist_t *prev, *cur, *next;
+    if (!words->next) return words;
+    // init
+    cur = words;
+    next = words->next;
+    // first operation
+    cur->next = (wordlist_t *)NULL;
+    while (next->next) {
+        // pointers move on
+        prev = cur;
+        cur = next;
+        next = cur->next;
+        // operation
+        cur->next = prev;
+    }
+    next->next = cur;
+    return next;
+}
+
 int is_built_in(simple_cmd_t *command) {
     return 0;
 }
@@ -69,6 +89,7 @@ void eval_loop() {
         if (!(strcmp(tmp, "\n"))) continue;
         yy_scan_string(tmp);
 		yyparse();
+        parsed_command->words = reverse_command(parsed_command->words);
         //describe_command(parsed_command);
         exec_cmd(parsed_command);
 	}

@@ -71,9 +71,10 @@
     #include <stdlib.h>
     #include <unistd.h>
     #include "shell.h"
+    int word_count = 0;
 
 /* Line 371 of yacc.c  */
-#line 77 "y.tab.c"
+#line 78 "y.tab.c"
 
 # ifndef YY_NULL
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -149,7 +150,7 @@ extern int yydebug;
 typedef union YYSTYPE
 {
 /* Line 387 of yacc.c  */
-#line 12 "shell.y"
+#line 13 "shell.y"
 
     int number;
     char *word;
@@ -160,7 +161,7 @@ typedef union YYSTYPE
 
 
 /* Line 387 of yacc.c  */
-#line 164 "y.tab.c"
+#line 165 "y.tab.c"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
@@ -188,7 +189,7 @@ int yyparse ();
 /* Copy the second part of user declarations.  */
 
 /* Line 390 of yacc.c  */
-#line 192 "y.tab.c"
+#line 193 "y.tab.c"
 
 #ifdef short
 # undef short
@@ -486,7 +487,7 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    42,    42,    45,    46,    49
+       0,    43,    43,    46,    47,    50
 };
 #endif
 
@@ -1369,31 +1370,34 @@ yyreduce:
     {
         case 2:
 /* Line 1787 of yacc.c  */
-#line 42 "shell.y"
+#line 43 "shell.y"
     { parsed_command = (yyvsp[(1) - (2)].command); }
     break;
 
   case 3:
 /* Line 1787 of yacc.c  */
-#line 45 "shell.y"
+#line 46 "shell.y"
     { (yyval.command) = gen_simple_cmd((yyvsp[(1) - (1)].element), (simple_cmd_t *)0); }
     break;
 
   case 4:
 /* Line 1787 of yacc.c  */
-#line 46 "shell.y"
+#line 47 "shell.y"
     { (yyval.command) = gen_simple_cmd((yyvsp[(2) - (2)].element), (yyvsp[(1) - (2)].command)); }
     break;
 
   case 5:
 /* Line 1787 of yacc.c  */
-#line 49 "shell.y"
-    { (yyval.element).word = (yyvsp[(1) - (1)].word); (yyval.element).redirect = 0; }
+#line 50 "shell.y"
+    {
+                                                            (yyval.element).word = (yyvsp[(1) - (1)].word);
+                                                            (yyval.element).redirect = 0;
+                                                        }
     break;
 
 
 /* Line 1787 of yacc.c  */
-#line 1397 "y.tab.c"
+#line 1401 "y.tab.c"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1625,7 +1629,7 @@ yyreturn:
 
 
 /* Line 2050 of yacc.c  */
-#line 51 "shell.y"
+#line 55 "shell.y"
 
 
 void yyerror(char *s) {
@@ -1646,13 +1650,12 @@ simple_cmd_t *gen_simple_cmd(element_t element, simple_cmd_t *command) {
     }
     // remember the arguments are added backwards
     if (element.word) {
-        printf("%s\n", element.word);
         tmp = (wordlist_t *) malloc(sizeof(wordlist_t));
         tmp->word = element.word;
-        tmp->next = rt->words;
-        rt->words = tmp;
+        tmp->next = command->words;
+        command->words = tmp;
     } else if (element.redirect) { // redirection
 
     }
-    return rt;
+    return command;
 }

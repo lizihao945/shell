@@ -6,6 +6,7 @@
     #include <stdlib.h>
     #include <unistd.h>
     #include "shell.h"
+    int word_count = 0;
 %}
 
 
@@ -46,7 +47,10 @@ simple_command                  : simple_command_element                { $$ = g
                                 | simple_command simple_command_element { $$ = gen_simple_cmd($2, $1); }
                                 ;
 /* element */                   /* word */
-simple_command_element          : WORD                                  { $$.word = $1; $$.redirect = 0; }
+simple_command_element          : WORD                  {
+                                                            $$.word = $1;
+                                                            $$.redirect = 0;
+                                                        }
                                 ;
 %%
 
@@ -68,13 +72,12 @@ simple_cmd_t *gen_simple_cmd(element_t element, simple_cmd_t *command) {
     }
     // remember the arguments are added backwards
     if (element.word) {
-        printf("%s\n", element.word);
         tmp = (wordlist_t *) malloc(sizeof(wordlist_t));
         tmp->word = element.word;
-        tmp->next = rt->words;
-        rt->words = tmp;
+        tmp->next = command->words;
+        command->words = tmp;
     } else if (element.redirect) { // redirection
 
     }
-    return rt;
+    return command;
 }
