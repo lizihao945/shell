@@ -1,7 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <fcntl.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include "shell.h"
 
 simple_cmd_t *parsed_command;
@@ -63,12 +68,41 @@ int is_built_in(simple_cmd_t *command) {
 void exec_cmd(simple_cmd_t *command) {
     int child_pid;
     char **args;
+    redirect_t *tmp;
+    int fd;
+    int flag;
     if (is_built_in(command)) {
     } else {
         if ((child_pid = fork()) < 0) {
             fprintf(stderr, "fork error!\n");
-        } else if (child_pid == 0) { // child            
-            //execlp(command->simple_cmd->words[0], command->simple_cmd->words, (char *)0);
+        } else if (child_pid == 0) { // child
+            tmp = command->redirects;
+            while (tmp) {
+                // define open flag
+                //printf("%c to %s\n", tmp->token_num, tmp->redirectee.filename);
+                if (tmp->redirectee.filename) {
+                    switch (tmp->token_num) {
+                        case '>':
+                            flag = O_TRUNC | O_WRONLY | O_CREAT;
+                            fd = open(tmp->redirectee.filename, flag, S_IRUSR | S_IWUSR);
+                            dup2(fd, STDOUT_FILENO);
+                            close(fd);
+                        break;
+                        case '<':
+                            flag = O_RDONLY;
+                            fd = open(tmp->redirectee.filename, flag);
+                            dup2(fd, STDIN_FILENO);
+                            close(fd);
+                            break;
+                        case RE_DGREAT:
+                            break;
+                        case RE_DLESS:
+                            break;
+                    }
+                } else
+                    fd = tmp->redirectee.fd;
+                tmp = tmp->next;
+            }
             args = gen_args(command->words);
             exit(execvp(command->words->word, args));
         } else {

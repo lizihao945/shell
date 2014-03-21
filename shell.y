@@ -33,6 +33,7 @@
 
 %type <command> simple_command
 %type <element> simple_command_element
+%type <redirect> redirection redirection_list
 
 %start init
 %%
@@ -40,7 +41,14 @@
 /* should use left recursion */
 /* The default action is {$$=$1;} */
 
-init                            : simple_command                        { parsed_command = $1; }
+init                            : simple_command                        {
+                                                                            parsed_command = $1;
+                                                                            parsed_command->redirects = (redirect_t *)NULL;
+                                                                        }
+                                | simple_command redirection_list       {
+                                                                            parsed_command = $1;
+                                                                            parsed_command->redirects = $2;
+                                                                        }
                                 ;
 /* command */                   /* element */
 simple_command                  : simple_command_element                { $$ = gen_simple_cmd($1, (simple_cmd_t *)0); }
@@ -51,6 +59,21 @@ simple_command_element          : WORD                  {
                                                             $$.word = $1;
                                                             $$.redirect = 0;
                                                         }
+                                ;
+/* redirect */
+redirection                     : '>' WORD                              { $$ = gen_redirect('>', $2); }
+                                | '<' WORD                              { $$ = gen_redirect('<', $2); }
+                                | DLESS WORD                            { $$ = gen_redirect(RE_DLESS, $2); }
+                                ;
+redirection_list                : redirection                           { $$ = $1; }
+                                | redirection_list redirection          {
+                                                                            // append the redirect to the end
+                                                                            redirect_t *tmp;
+                                                                            tmp = $1;
+                                                                            while (tmp->next) tmp = tmp->next;
+                                                                            tmp->next = $2;
+                                                                            $$ = $1;
+                                                                        }
                                 ;
 %%
 
@@ -80,4 +103,11 @@ simple_cmd_t *gen_simple_cmd(element_t element, simple_cmd_t *command) {
 
     }
     return command;
+}
+
+redirect_t *gen_redirect(int token_num, char *filename) {
+    redirect_t *rt;
+    rt = (redirect_t *) malloc(sizeof(redirect_t));
+    rt->redirectee.filename = filename;
+    rt->token_num = token_num;
 }

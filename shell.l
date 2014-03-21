@@ -14,11 +14,12 @@
 "<>"											{ return LESSGREAT; }
 "<<-"											{ return DLESSDASH; }
 [0-9]*											{ return IO_NUMBER; }
-[a-zA-Z\-/]+									{ 
-													yylval.word = (char *) malloc(sizeof(char) * 256);
+[\".a-zA-Z\-/]+									{ 
+													yylval.word = (char *) malloc(sizeof(char) * FILE_LENGTH);
 													strcpy(yylval.word, yytext);
 													return WORD;
 												}
+[<>]											{ return *yytext; }
 ";"												{ return ';'; }
 "\n"											{ return '\n'; }
 [ \t]+											{ ; }
