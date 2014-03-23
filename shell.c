@@ -12,18 +12,86 @@
 
 #include "shell.h"
 
-extern int errno;
+// functions
+job_t *add_job(pid_t pid);
+
+// varialbes
 simple_cmd_t *parsed_command;
+job_t *jobs = NULL;
+int jobs_count = 0;
+pid_t fgPid = 0;
 
 char *echo_prompt() {
     return "myshell$ ";
 }
 
 void sig_handler(int signo) {
+    job_t *p;
     switch (signo) {
+        // Ctrl + c: should be ignored
         case SIGINT:
             printf("\n%s", echo_prompt());
+            break;
+        // Ctrl + z: ignored if there's no job(won't go here)
+        case SIGTSTP:
+            p = add_job(fgPid);
+            p->stat = STOPPED;
+            printf("\n[%d]+  Stopped\t\t\t%s\n", p->pid, p->cmd);
+            // send stop signal to child
+            kill(fgPid, SIGSTOP);
+            fgPid = 0;
+            // ignore subsequent SIGTSTP
+            signal(SIGTSTP, SIG_IGN);
+            break;
+        // Ctrl + z: sent from stopped child
+        case SIGCHLD:
+            break;
     }
+}
+
+job_t *add_job(pid_t pid) {
+    job_t *rt, *p;
+    // add SIGTSTP handler
+    // signal(SIGTSTP, sig_handler);
+    // check if job exists
+    p = jobs;
+    while (p != NULL && p->pid != pid)
+        p = p->next;
+    if (p != NULL) return p;
+    // generate a new job
+    rt = (job_t *) malloc(sizeof(job_t));
+    rt->pid = pid;
+    rt->cmd = (char *) malloc(sizeof(char) * FILE_LENGTH);
+    strcpy(rt->cmd, parsed_command->words->word);
+    rt->stat = RUNNING;
+    rt->num = ++jobs_count;
+    rt->next = NULL;
+    // add it to the job list
+    if (jobs == NULL)
+        jobs = rt;
+    else {
+        for (p = jobs; p->next != NULL; p = p->next);
+        p->next = rt;
+    }
+    return rt;
+}
+
+void kill_job(pid_t pid) {
+    job_t *p, *last;
+    p = jobs;
+    while (p != NULL && p->pid != pid) {
+        last = p;
+        p = p->next;
+    }
+    if (p == NULL) {
+        printf("kill: no such job\n");
+        return;
+    }
+    if (p == jobs)
+        jobs = jobs->next;
+    else
+        last->next = p->next;
+    free(p);
 }
 
 void describe_command(simple_cmd_t *command) {
@@ -76,19 +144,43 @@ wordlist_t *reverse_command(wordlist_t *words) {
     return next;
 }
 
+void exec_fg(pid_t pid) {
+    job_t *p;
+    p = jobs;
+    while (p != NULL && p->pid != pid)
+        p = p->next;
+    if (p == NULL) {
+        printf("job not found!\n");
+        return;
+    }
+    fgPid = p->pid;
+    p->stat = RUNNING;
+    // ready to stop it
+    signal(SIGTSTP, sig_handler);
+    kill(p->pid, SIGCONT);
+    waitpid(fgPid, NULL, WUNTRACED);
+}
+
 int is_built_in(simple_cmd_t *command) {
-    return 0;
+    if (!strcmp(command->words->word, "fg"))
+        return CMD_FG;
+    else if (!strcmp(command->words->word, "bg"))
+        return CMD_BG;
+    else return 0;
 }
 
 void exec_cmd(simple_cmd_t *command) {
-    int child_pid;
+    pid_t child_pid;
     char **args;
     redirect_t *tmp;
-    int fd;
-    int flag;
-    if (is_built_in(command)) {
+    int fd, flag, cmd_idx;
+    if (cmd_idx = is_built_in(command)) {
+        switch(cmd_idx) {
+            case CMD_FG:
+                exec_fg(atoi(command->words->next->word));
+                break;
+        }
     } else {
-
         if ((child_pid = fork()) < 0) {
             fprintf(stderr, "fork error!\n");
         } else if (child_pid == 0) { // child
@@ -133,8 +225,15 @@ void exec_cmd(simple_cmd_t *command) {
                 }
             }
             exit(0);
-        } else {
-            waitpid(child_pid, NULL, 0);
+        } else { // parent
+            // foreground execution
+            fgPid = child_pid;
+            // ready to stop it
+            signal(SIGTSTP, sig_handler);
+            // if child process is suspended,
+            // wait() will return
+            waitpid(child_pid, NULL, WUNTRACED);
+            signal(SIGTSTP, SIG_IGN);
         }
     }
 }
@@ -143,8 +242,8 @@ void eval_loop() {
     char *tmp, c;
     int i;
     tmp = (char *) malloc(sizeof(char) * 256);
-	while ((tmp = readline(echo_prompt())) != NULL) {
-		//printf("my_shell$ ");
+    while ((tmp = readline(echo_prompt())) != NULL) {
+        //printf("my_shell$ ");
         // fill the buffer
         /*i = 0;
         while ((c = getchar()) != '\n') {   // ASCII 10 stands for '\n'
@@ -159,18 +258,19 @@ void eval_loop() {
         if (!(strcmp(tmp, "\n"))) continue;*/
         add_history(tmp);
         yy_scan_string(tmp);
-		yyparse();
+        yyparse();
         if (parsed_command == NULL) continue;
         parsed_command->words = reverse_command(parsed_command->words);
         //describe_command(parsed_command);
         exec_cmd(parsed_command);
-	}
+    }
     free(tmp);
 }
 
 int main(void) {
-    // SIGINT(Ctrl + c) should be ignored
     signal(SIGINT, sig_handler);
+    //signal(SIGCHLD, sig_handler);
+    signal(SIGTSTP, SIG_IGN);
 	eval_loop();
 	return 0;
 }

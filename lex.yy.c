@@ -379,8 +379,8 @@ struct yy_trans_info
 	};
 static yyconst flex_int16_t yy_accept[22] =
     {   0,
-        7,    7,   15,   13,   12,   11,    8,    7,   10,    9,
-        9,   12,    8,    7,    3,    1,    5,    4,    2,    6,
+        8,    8,   15,   13,   12,   11,    7,    7,   10,    9,
+        9,   12,    7,    7,    3,    1,    5,    4,    2,    6,
         0
     } ;
 
@@ -418,27 +418,27 @@ static yyconst flex_int32_t yy_ec[256] =
 
 static yyconst flex_int32_t yy_meta[11] =
     {   0,
-        1,    1,    1,    2,    1,    2,    1,    1,    1,    1
+        1,    1,    1,    2,    1,    2,    2,    1,    1,    1
     } ;
 
 static yyconst flex_int16_t yy_base[23] =
     {   0,
-        0,    0,   21,   23,   18,   23,    0,   12,   23,    6,
-       12,   16,    0,    7,   23,    7,   23,   23,   23,   23,
+        0,    0,   20,   23,   17,   23,    0,   11,   23,    6,
+       12,   12,    0,    0,   23,    7,   23,   23,   23,   23,
        23,   10
     } ;
 
 static yyconst flex_int16_t yy_def[23] =
     {   0,
-       21,    1,   21,   21,   21,   21,   22,   21,   21,   21,
-       21,   21,   22,   21,   21,   21,   21,   21,   21,   21,
+       21,    1,   21,   21,   21,   21,   22,   22,   21,   21,
+       21,   21,   22,    8,   21,   21,   21,   21,   21,   21,
         0,   21
     } ;
 
 static yyconst flex_int16_t yy_nxt[34] =
     {   0,
         4,    5,    6,    7,    4,    7,    8,    9,   10,   11,
-       15,   13,   20,   14,   16,   17,   18,   12,   14,   12,
+       15,   13,   20,   12,   16,   17,   18,   14,   12,   21,
        21,   19,    3,   21,   21,   21,   21,   21,   21,   21,
        21,   21,   21
     } ;
@@ -446,8 +446,8 @@ static yyconst flex_int16_t yy_nxt[34] =
 static yyconst flex_int16_t yy_chk[34] =
     {   0,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-       10,   22,   16,   14,   10,   10,   11,   12,    8,    5,
-        3,   11,   21,   21,   21,   21,   21,   21,   21,   21,
+       10,   22,   16,   12,   10,   10,   11,    8,    5,    3,
+        0,   11,   21,   21,   21,   21,   21,   21,   21,   21,
        21,   21,   21
     } ;
 
@@ -777,16 +777,16 @@ YY_RULE_SETUP
 case 7:
 YY_RULE_SETUP
 #line 16 "shell.l"
-{ return IO_NUMBER; }
-	YY_BREAK
-case 8:
-YY_RULE_SETUP
-#line 17 "shell.l"
 { 
 													yylval.word = (char *) malloc(sizeof(char) * FILE_LENGTH);
 													strcpy(yylval.word, yytext);
 													return WORD;
 												}
+	YY_BREAK
+case 8:
+YY_RULE_SETUP
+#line 21 "shell.l"
+{ return NUMBER; }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP

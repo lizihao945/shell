@@ -1,6 +1,15 @@
 #ifndef SHELL_H
 #define SHELL_H
 
+#define FILE_LENGTH     256
+#define RE_DLESS        1000
+#define RE_DGREAT       1001
+#define RUNNING         1
+#define STOPPED         0
+
+#define CMD_FG          2000
+#define CMD_BG          2001
+
 typedef struct redirectee_st {
     int fd;
     char *filename;
@@ -34,9 +43,11 @@ typedef struct element_st {
     redirect_t *redirect;
 } element_t;
 
-#define FILE_LENGTH     256
-#define RE_DLESS        1000
-#define RE_DGREAT       1001
+typedef struct job_st {
+    struct job_st *next;
+    int pid, stat, num;
+    char *cmd;
+} job_t;
 
 extern simple_cmd_t *parsed_command;
 
