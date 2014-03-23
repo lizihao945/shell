@@ -49,6 +49,7 @@ init                            : simple_command                        {
                                                                             parsed_command = $1;
                                                                             parsed_command->redirects = $2;
                                                                         }
+                                | /* empty command */                   { parsed_command = NULL; }
                                 ;
 /* command */                   /* element */
 simple_command                  : simple_command_element                { $$ = gen_simple_cmd($1, (simple_cmd_t *)0); }

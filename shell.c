@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <signal.h>
+#include <string.h>
+#include <errno.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <sys/types.h>
@@ -9,7 +12,19 @@
 
 #include "shell.h"
 
+extern int errno;
 simple_cmd_t *parsed_command;
+
+char *echo_prompt() {
+    return "myshell$ ";
+}
+
+void sig_handler(int signo) {
+    switch (signo) {
+        case SIGINT:
+            printf("\n%s", echo_prompt());
+    }
+}
 
 void describe_command(simple_cmd_t *command) {
     wordlist_t *p;
@@ -73,6 +88,7 @@ void exec_cmd(simple_cmd_t *command) {
     int flag;
     if (is_built_in(command)) {
     } else {
+
         if ((child_pid = fork()) < 0) {
             fprintf(stderr, "fork error!\n");
         } else if (child_pid == 0) { // child
@@ -104,7 +120,19 @@ void exec_cmd(simple_cmd_t *command) {
                 tmp = tmp->next;
             }
             args = gen_args(command->words);
-            exit(execvp(command->words->word, args));
+            if (execvp(command->words->word, args)) {
+                switch (errno) {
+                    case EACCES:
+                        printf("%s: Permission denied\n", command->words->word);
+                        break;
+                    case ENOENT:
+                        printf("%s: No such file or directory\n", command->words->word);
+                        break;
+                    default:
+                    printf("Errno number %d not handled!\n", errno);
+                }
+            }
+            exit(0);
         } else {
             waitpid(child_pid, NULL, 0);
         }
@@ -115,7 +143,7 @@ void eval_loop() {
     char *tmp, c;
     int i;
     tmp = (char *) malloc(sizeof(char) * 256);
-	while ((tmp = readline("myshell$ ")) != NULL) {
+	while ((tmp = readline(echo_prompt())) != NULL) {
 		//printf("my_shell$ ");
         // fill the buffer
         /*i = 0;
@@ -132,6 +160,7 @@ void eval_loop() {
         add_history(tmp);
         yy_scan_string(tmp);
 		yyparse();
+        if (parsed_command == NULL) continue;
         parsed_command->words = reverse_command(parsed_command->words);
         //describe_command(parsed_command);
         exec_cmd(parsed_command);
@@ -140,6 +169,8 @@ void eval_loop() {
 }
 
 int main(void) {
+    // SIGINT(Ctrl + c) should be ignored
+    signal(SIGINT, sig_handler);
 	eval_loop();
 	return 0;
 }
