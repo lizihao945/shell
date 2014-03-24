@@ -29,7 +29,9 @@ void sig_handler(int signo) {
     job_t *p;
     switch (signo) {
         // Ctrl + c: should be ignored
+        // if there's no foreground job
         case SIGINT:
+            if (fgPid != 0) return;
             printf("\n%s", echo_prompt());
             break;
         // Ctrl + z: ignored if there's no job(won't go here)
@@ -161,6 +163,20 @@ void exec_fg(pid_t pid) {
     waitpid(fgPid, NULL, WUNTRACED);
 }
 
+void exec_bg(pid_t pid) {
+    job_t *p;
+    p = jobs;    
+    while (p != NULL && p->pid != pid)
+        p = p->next;
+    if (p == NULL) {
+        printf("job not found!\n");
+        return;
+    }
+    p->stat = RUNNING;
+    printf("\n[%d]+ %s &\n", p->pid, p->cmd);
+    kill(p->pid, SIGCONT);
+}
+
 int is_built_in(simple_cmd_t *command) {
     if (!strcmp(command->words->word, "fg"))
         return CMD_FG;
@@ -178,6 +194,9 @@ void exec_cmd(simple_cmd_t *command) {
         switch(cmd_idx) {
             case CMD_FG:
                 exec_fg(atoi(command->words->next->word));
+                break;
+            case CMD_BG:
+                exec_bg(atoi(command->words->next->word));
                 break;
         }
     } else {
@@ -233,6 +252,8 @@ void exec_cmd(simple_cmd_t *command) {
             // if child process is suspended,
             // wait() will return
             waitpid(child_pid, NULL, WUNTRACED);
+            // update status
+            fgPid = 0;
             signal(SIGTSTP, SIG_IGN);
         }
     }
