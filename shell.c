@@ -4,6 +4,7 @@
 #include <signal.h>
 #include <string.h>
 #include <errno.h>
+#include <pwd.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <sys/types.h>
@@ -23,6 +24,21 @@ int jobs_count = 0;
 pid_t fg_pid = 0;
 char *line_str;
 int background;
+
+char *echo_prompt() {
+    char *rt, *p;
+    rt = getpwuid(getuid())->pw_name;
+    p = (char *) malloc(sizeof(char) * FILE_LENGTH);
+    gethostname(p, FILE_LENGTH);
+    strcat(rt, "@");
+    strcat(rt, p);
+    getcwd(p, FILE_LENGTH);
+    strcat(rt, ":");
+    strcat(rt, p);
+    strcat(rt, "$ ");
+    return rt;
+    //return "myshell$ ";
+}
 
 pipeline_t *reverse_pipeline(pipeline_t *pipeline) {
     pipeline_t *prev, *cur, *next;
@@ -62,10 +78,6 @@ wordlist_t *reverse_command(wordlist_t *words) {
     }
     next->next = cur;
     return next;
-}
-
-char *echo_prompt() {
-    return "myshell$ ";
 }
 
 void kill_job(pid_t pid) {
