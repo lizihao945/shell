@@ -8,6 +8,7 @@
 #define CMD_FG          2000
 #define CMD_BG          2001
 #define CMD_EXIT        2002
+#define CMD_HISTORY     2003
 
 typedef struct redirectee_st {
     int fd;

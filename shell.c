@@ -237,6 +237,17 @@ void exec_bg(pid_t pid) {
     //kill(pid, SIGTTIN);
 }
 
+void exec_history() {
+    HIST_ENTRY *p;
+    int i = 1;
+    history_set_pos(0);
+    while (p = current_history()) {
+        printf("%5d  %s\n", i++, p->line);
+        next_history();
+    }
+    
+}
+
 int is_built_in(simple_cmd_t *command) {
     if (!strcmp(command->words->word, "fg"))
         return CMD_FG;
@@ -244,6 +255,8 @@ int is_built_in(simple_cmd_t *command) {
         return CMD_BG;
     else if (!strcmp(command->words->word, "exit"))
         exit(0);
+    else if (!strcmp(command->words->word, "history"))
+        return CMD_HISTORY;
     else return 0;
 }
 
@@ -259,6 +272,9 @@ void exec_cmd(simple_cmd_t *command) {
                 break;
             case CMD_BG:
                 exec_bg(atoi(command->words->next->word));
+                break;
+            case CMD_HISTORY:
+                exec_history();
                 break;
         }
     } else {
