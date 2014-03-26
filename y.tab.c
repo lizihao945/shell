@@ -158,10 +158,11 @@ typedef union YYSTYPE
     simple_cmd_t *command;
     redirect_t *redirect;
     element_t element;
+    pipeline_t *pipeline;
 
 
 /* Line 387 of yacc.c  */
-#line 165 "y.tab.c"
+#line 166 "y.tab.c"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
@@ -189,7 +190,7 @@ int yyparse ();
 /* Copy the second part of user declarations.  */
 
 /* Line 390 of yacc.c  */
-#line 193 "y.tab.c"
+#line 194 "y.tab.c"
 
 #ifdef short
 # undef short
@@ -416,18 +417,18 @@ union yyalloc
 #endif /* !YYCOPY_NEEDED */
 
 /* YYFINAL -- State number of the termination state.  */
-#define YYFINAL  5
+#define YYFINAL  7
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   15
+#define YYLAST   18
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  20
+#define YYNTOKENS  22
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  6
+#define YYNNTS  8
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  12
+#define YYNRULES  16
 /* YYNRULES -- Number of states.  */
-#define YYNSTATES  16
+#define YYNSTATES  21
 
 /* YYTRANSLATE(YYLEX) -- Bison symbol number corresponding to YYLEX.  */
 #define YYUNDEFTOK  2
@@ -442,16 +443,16 @@ static const yytype_uint8 yytranslate[] =
        0,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,    18,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+      21,     2,    20,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-      19,     2,    18,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,    19,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
@@ -474,23 +475,25 @@ static const yytype_uint8 yytranslate[] =
    YYRHS.  */
 static const yytype_uint8 yyprhs[] =
 {
-       0,     0,     3,     5,     8,     9,    11,    14,    16,    19,
-      22,    25,    27
+       0,     0,     3,     5,     8,     9,    11,    15,    17,    20,
+      22,    25,    27,    30,    33,    36,    38
 };
 
 /* YYRHS -- A `-1'-separated list of the rules' RHS.  */
 static const yytype_int8 yyrhs[] =
 {
-      21,     0,    -1,    22,    -1,    22,    25,    -1,    -1,    23,
-      -1,    22,    23,    -1,    12,    -1,    18,    12,    -1,    19,
-      12,    -1,     6,    12,    -1,    24,    -1,    25,    24,    -1
+      23,     0,    -1,    24,    -1,    24,    18,    -1,    -1,    25,
+      -1,    24,    19,    25,    -1,    26,    -1,    26,    29,    -1,
+      27,    -1,    26,    27,    -1,    12,    -1,    20,    12,    -1,
+      21,    12,    -1,     6,    12,    -1,    28,    -1,    29,    28,
+      -1
 };
 
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    44,    44,    48,    52,    55,    56,    59,    65,    66,
-      67,    69,    70
+       0,    46,    46,    50,    54,    58,    59,    62,    66,    72,
+      75,    80,    86,    87,    88,    90,    91
 };
 #endif
 
@@ -501,9 +504,9 @@ static const char *const yytname[] =
 {
   "$end", "error", "$undefined", "AND_IF", "OR_IF", "DSEMI", "DLESS",
   "DGREAT", "LESSAND", "GREATAND", "LESSGREAT", "DLESSDASH", "WORD",
-  "NUMBER", "COND_CMD", "NEWLINE", "IO_NUMBER", "yacc_EOF", "'>'", "'<'",
-  "$accept", "init", "simple_command", "simple_command_element",
-  "redirection", "redirection_list", YY_NULL
+  "NUMBER", "COND_CMD", "NEWLINE", "IO_NUMBER", "yacc_EOF", "'&'", "'|'",
+  "'>'", "'<'", "$accept", "init", "pipeline", "command", "simple_command",
+  "simple_command_element", "redirection", "redirection_list", YY_NULL
 };
 #endif
 
@@ -513,22 +516,23 @@ static const char *const yytname[] =
 static const yytype_uint16 yytoknum[] =
 {
        0,   256,   257,   258,   259,   260,   261,   262,   263,   264,
-     265,   266,   267,   268,   269,   270,   271,   272,    62,    60
+     265,   266,   267,   268,   269,   270,   271,   272,    38,   124,
+      62,    60
 };
 # endif
 
 /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
 static const yytype_uint8 yyr1[] =
 {
-       0,    20,    21,    21,    21,    22,    22,    23,    24,    24,
-      24,    25,    25
+       0,    22,    23,    23,    23,    24,    24,    25,    25,    26,
+      26,    27,    28,    28,    28,    29,    29
 };
 
 /* YYR2[YYN] -- Number of symbols composing right hand side of rule YYN.  */
 static const yytype_uint8 yyr2[] =
 {
-       0,     2,     1,     2,     0,     1,     2,     1,     2,     2,
-       2,     1,     2
+       0,     2,     1,     2,     0,     1,     3,     1,     2,     1,
+       2,     1,     2,     2,     2,     1,     2
 };
 
 /* YYDEFACT[STATE-NAME] -- Default reduction number in state STATE-NUM.
@@ -536,29 +540,31 @@ static const yytype_uint8 yyr2[] =
    means the default is an error.  */
 static const yytype_uint8 yydefact[] =
 {
-       4,     7,     0,     2,     5,     1,     0,     0,     0,     6,
-      11,     3,    10,     8,     9,    12
+       4,    11,     0,     2,     5,     7,     9,     1,     3,     0,
+       0,     0,     0,    10,    15,     8,     6,    14,    12,    13,
+      16
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-      -1,     2,     3,     4,    10,    11
+      -1,     2,     3,     4,     5,     6,    14,    15
 };
 
 /* YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
    STATE-NUM.  */
-#define YYPACT_NINF -12
+#define YYPACT_NINF -16
 static const yytype_int8 yypact[] =
 {
-     -11,   -12,     3,    -6,   -12,   -12,    -8,    -7,    -5,   -12,
-     -12,    -4,   -12,   -12,   -12,   -12
+     -11,   -16,     5,   -15,   -16,    -6,   -16,   -16,   -16,   -11,
+      -5,    -3,    -2,   -16,   -16,    -4,   -16,   -16,   -16,   -16,
+     -16
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -12,   -12,   -12,     5,    -2,   -12
+     -16,   -16,   -16,    -1,   -16,     6,     3,   -16
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]].  What to do in state STATE-NUM.  If
@@ -567,28 +573,29 @@ static const yytype_int8 yypgoto[] =
 #define YYTABLE_NINF -1
 static const yytype_uint8 yytable[] =
 {
-       6,     1,     6,     5,    12,    13,     1,    14,     9,    15,
-       0,     0,     7,     8,     7,     8
+      10,     1,    10,     8,     9,     7,     1,    17,    16,    18,
+      19,    13,     0,     0,    11,    12,    11,    12,    20
 };
 
 #define yypact_value_is_default(Yystate) \
-  (!!((Yystate) == (-12)))
+  (!!((Yystate) == (-16)))
 
 #define yytable_value_is_error(Yytable_value) \
   YYID (0)
 
 static const yytype_int8 yycheck[] =
 {
-       6,    12,     6,     0,    12,    12,    12,    12,     3,    11,
-      -1,    -1,    18,    19,    18,    19
+       6,    12,     6,    18,    19,     0,    12,    12,     9,    12,
+      12,     5,    -1,    -1,    20,    21,    20,    21,    15
 };
 
 /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
    symbol of state STATE-NUM.  */
 static const yytype_uint8 yystos[] =
 {
-       0,    12,    21,    22,    23,     0,     6,    18,    19,    23,
-      24,    25,    12,    12,    12,    24
+       0,    12,    23,    24,    25,    26,    27,     0,    18,    19,
+       6,    20,    21,    27,    28,    29,    25,    12,    12,    12,
+      28
 };
 
 #define yyerrok		(yyerrstatus = 0)
@@ -1381,89 +1388,125 @@ yyreduce:
     {
         case 2:
 /* Line 1787 of yacc.c  */
-#line 44 "shell.y"
+#line 46 "shell.y"
     {
-                                                                            parsed_command = (yyvsp[(1) - (1)].command);
-                                                                            parsed_command->redirects = (redirect_t *)NULL;
-                                                                        }
+                                                                                parsed_pipeline = (yyvsp[(1) - (1)].pipeline);
+                                                                                background = 0;
+                                                                            }
     break;
 
   case 3:
 /* Line 1787 of yacc.c  */
-#line 48 "shell.y"
+#line 50 "shell.y"
     {
-                                                                            parsed_command = (yyvsp[(1) - (2)].command);
-                                                                            parsed_command->redirects = (yyvsp[(2) - (2)].redirect);
-                                                                        }
+                                                                                parsed_pipeline = (yyvsp[(1) - (2)].pipeline);
+                                                                                background = 1;
+                                                                            }
     break;
 
   case 4:
 /* Line 1787 of yacc.c  */
-#line 52 "shell.y"
-    { parsed_command = NULL; }
+#line 54 "shell.y"
+    {
+                                                                                parsed_pipeline = NULL;
+                                                                            }
     break;
 
   case 5:
 /* Line 1787 of yacc.c  */
-#line 55 "shell.y"
-    { (yyval.command) = gen_simple_cmd((yyvsp[(1) - (1)].element), (simple_cmd_t *)0); }
+#line 58 "shell.y"
+    { (yyval.pipeline) = gen_pipe((yyvsp[(1) - (1)].command), (pipeline_t *)NULL); }
     break;
 
   case 6:
 /* Line 1787 of yacc.c  */
-#line 56 "shell.y"
-    { (yyval.command) = gen_simple_cmd((yyvsp[(2) - (2)].element), (yyvsp[(1) - (2)].command)); }
+#line 59 "shell.y"
+    { (yyval.pipeline) = gen_pipe((yyvsp[(3) - (3)].command), (yyvsp[(1) - (3)].pipeline)); }
     break;
 
   case 7:
 /* Line 1787 of yacc.c  */
-#line 59 "shell.y"
+#line 62 "shell.y"
     {
-                                                            (yyval.element).word = (yyvsp[(1) - (1)].word);
-                                                            (yyval.element).redirect = 0;
-                                                        }
+                                                                                (yyval.command) = (yyvsp[(1) - (1)].command);
+                                                                                (yyval.command)->redirects = (redirect_t *)NULL;
+                                                                            }
     break;
 
   case 8:
 /* Line 1787 of yacc.c  */
-#line 65 "shell.y"
-    { (yyval.redirect) = gen_redirect('>', (yyvsp[(2) - (2)].word)); }
+#line 66 "shell.y"
+    {
+                                                                                (yyval.command) = (yyvsp[(1) - (2)].command);
+                                                                                (yyval.command)->redirects = (yyvsp[(2) - (2)].redirect);
+                                                                            }
     break;
 
   case 9:
 /* Line 1787 of yacc.c  */
-#line 66 "shell.y"
-    { (yyval.redirect) = gen_redirect('<', (yyvsp[(2) - (2)].word)); }
+#line 72 "shell.y"
+    {
+                                                                                (yyval.command) = gen_simple_cmd((yyvsp[(1) - (1)].element), (simple_cmd_t *)0);
+                                                                            }
     break;
 
   case 10:
 /* Line 1787 of yacc.c  */
-#line 67 "shell.y"
-    { (yyval.redirect) = gen_redirect(RE_DLESS, (yyvsp[(2) - (2)].word)); }
+#line 75 "shell.y"
+    {
+                                                                                (yyval.command) = gen_simple_cmd((yyvsp[(2) - (2)].element), (yyvsp[(1) - (2)].command));
+                                                                            }
     break;
 
   case 11:
 /* Line 1787 of yacc.c  */
-#line 69 "shell.y"
-    { (yyval.redirect) = (yyvsp[(1) - (1)].redirect); }
+#line 80 "shell.y"
+    {
+                                                                                (yyval.element).word = (yyvsp[(1) - (1)].word);
+                                                                                (yyval.element).redirect = 0;
+                                                                            }
     break;
 
   case 12:
 /* Line 1787 of yacc.c  */
-#line 70 "shell.y"
+#line 86 "shell.y"
+    { (yyval.redirect) = gen_redirect('>', (yyvsp[(2) - (2)].word)); }
+    break;
+
+  case 13:
+/* Line 1787 of yacc.c  */
+#line 87 "shell.y"
+    { (yyval.redirect) = gen_redirect('<', (yyvsp[(2) - (2)].word)); }
+    break;
+
+  case 14:
+/* Line 1787 of yacc.c  */
+#line 88 "shell.y"
+    { (yyval.redirect) = gen_redirect(RE_DLESS, (yyvsp[(2) - (2)].word)); }
+    break;
+
+  case 15:
+/* Line 1787 of yacc.c  */
+#line 90 "shell.y"
+    { (yyval.redirect) = (yyvsp[(1) - (1)].redirect); }
+    break;
+
+  case 16:
+/* Line 1787 of yacc.c  */
+#line 91 "shell.y"
     {
-                                                                            // append the redirect to the end
-                                                                            redirect_t *tmp;
-                                                                            tmp = (yyvsp[(1) - (2)].redirect);
-                                                                            while (tmp->next) tmp = tmp->next;
-                                                                            tmp->next = (yyvsp[(2) - (2)].redirect);
-                                                                            (yyval.redirect) = (yyvsp[(1) - (2)].redirect);
-                                                                        }
+                                                                                // append the redirect to the end
+                                                                                redirect_t *tmp;
+                                                                                tmp = (yyvsp[(1) - (2)].redirect);
+                                                                                while (tmp->next) tmp = tmp->next;
+                                                                                tmp->next = (yyvsp[(2) - (2)].redirect);
+                                                                                (yyval.redirect) = (yyvsp[(1) - (2)].redirect);
+                                                                            }
     break;
 
 
 /* Line 1787 of yacc.c  */
-#line 1467 "y.tab.c"
+#line 1510 "y.tab.c"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1695,11 +1738,26 @@ yyreturn:
 
 
 /* Line 2050 of yacc.c  */
-#line 79 "shell.y"
+#line 100 "shell.y"
 
 
 void yyerror(char *s) {
 	fprintf(stderr, "%s\n", s);
+}
+
+pipeline_t *gen_pipe(simple_cmd_t *command, pipeline_t *pipeline) {
+    pipeline_t *rt;
+    rt = (pipeline_t *) malloc(sizeof(pipeline_t *));
+    // a simple command
+    if (pipeline == NULL) {
+        rt->cmd = command;
+        rt->next = NULL;
+        return rt;
+    } else {
+        rt->cmd = command;
+        rt->next = pipeline;
+    }
+    return rt;
 }
 
 simple_cmd_t *gen_simple_cmd(element_t element, simple_cmd_t *command) {

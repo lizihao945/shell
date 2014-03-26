@@ -4,11 +4,10 @@
 #define FILE_LENGTH     256
 #define RE_DLESS        1000
 #define RE_DGREAT       1001
-#define RUNNING         1
-#define STOPPED         0
 
 #define CMD_FG          2000
 #define CMD_BG          2001
+#define CMD_EXIT        2002
 
 typedef struct redirectee_st {
     int fd;
@@ -45,17 +44,23 @@ typedef struct element_st {
 
 typedef struct job_st {
     struct job_st *next;
-    int pid, stat, num;
+    int pid, num;
     char *cmd;
 } job_t;
 
-extern simple_cmd_t *parsed_command;
+typedef struct pipeline_st {
+    struct pipeline_st *next;
+    simple_cmd_t *cmd;
+} pipeline_t;
 
-void exec_cmd(simple_cmd_t *command);
+extern pipeline_t *parsed_pipeline;
+extern int background;
+
 void print_prompt();
 int wordlist_length(wordlist_t *words);
 char **gen_args(wordlist_t *words);
 int is_built_in(simple_cmd_t *command);
+pipeline_t *gen_pipe(simple_cmd_t *command, pipeline_t *pipeline);
 simple_cmd_t *gen_simple_cmd(element_t element, simple_cmd_t *command);
 redirect_t *gen_redirect(int token_num, char *filename);
 

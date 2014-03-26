@@ -94,10 +94,11 @@ typedef union YYSTYPE
     simple_cmd_t *command;
     redirect_t *redirect;
     element_t element;
+    pipeline_t *pipeline;
 
 
 /* Line 2053 of yacc.c  */
-#line 101 "y.tab.h"
+#line 102 "y.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
