@@ -177,7 +177,10 @@ void describe_pipeline(pipeline_t *pipeline) {
         printf("redirects: ");
         q = command->redirects;
         while (q) {
-            printf("%c %s; ", q->token_num, q->redirectee.filename);
+            if (q->redirectee.filename)
+                printf("%c %s; ", q->token_num, q->redirectee.filename);
+            else
+                printf("%c %d; ", q->token_num, q->redirectee.fd);
             q = q->next;
         }
         printf("\n");
@@ -262,7 +265,6 @@ void exec_cmd(simple_cmd_t *command) {
         if ((child_pid = fork()) < 0) {
             fprintf(stderr, "fork error!\n");
         } else if (child_pid == 0) { // child
-            // set to a new group
             tmp = command->redirects;
             while (tmp) {
                 // define open flag
@@ -286,8 +288,18 @@ void exec_cmd(simple_cmd_t *command) {
                         case RE_DLESS:
                             break;
                     }
-                } else
+                } else {
                     fd = tmp->redirectee.fd;
+                    if (tmp->token_num == '>') {
+                        printf("%s: write to %d\n", command->words->word, fd);
+                        dup2(fd, STDOUT_FILENO);
+                        close(fd);
+                    } else {
+                        printf("%s: read from %d\n", command->words->word, fd);
+                        dup2(fd, STDIN_FILENO);
+                        close(fd);
+                    }
+                }
                 tmp = tmp->next;
             }
             args = gen_args(command->words);
@@ -305,6 +317,14 @@ void exec_cmd(simple_cmd_t *command) {
             }
             exit(0);
         } else { // parent
+            // parent should close these pipefds
+            // so that read end won't hang
+            tmp = command->redirects;
+            while (tmp) {
+                if (!tmp->redirectee.filename)
+                    close(tmp->redirectee.fd);
+                tmp = tmp->next;
+            }
             // ready to stop it
             sigaction(SIGTSTP, &sa_val, NULL);
             if (!background) {
@@ -322,15 +342,31 @@ void exec_cmd(simple_cmd_t *command) {
     }
 }
 
-void exec_pipeline(pipeline_t *pipeline) {
+void gen_redirects(pipeline_t *pipeline) {    
+    redirect_t *p;
     int fd[2];
-    if (!pipeline->next) {
-        exec_cmd(pipeline->cmd);
-        return;
-    }
-    for (; pipeline != NULL; pipeline = pipeline->next) {
+    for (; pipeline->next != NULL; pipeline = pipeline->next) {
         pipe(fd);
+        // prev cmd writes to the write end
+        p = (redirect_t *) malloc(sizeof(redirect_t));
+        p->next = pipeline->cmd->redirects;
+        p->token_num = '>';
+        p->redirectee.fd = fd[1];
+        p->redirectee.filename = NULL;
+        pipeline->cmd->redirects = p;
+        // next cmd reads from the read end
+        p = (redirect_t *) malloc(sizeof(redirect_t));
+        p->next = pipeline->next->cmd->redirects;
+        p->token_num = '<';
+        p->redirectee.fd = fd[0];
+        p->redirectee.filename = NULL;
+        pipeline->next->cmd->redirects = p;
     }
+}
+
+void exec_pipeline(pipeline_t *pipeline) {
+    for (; pipeline; pipeline = pipeline->next)
+        exec_cmd(pipeline->cmd);
 }
 
 void eval_loop() {
@@ -345,6 +381,7 @@ void eval_loop() {
         parsed_pipeline = reverse_pipeline(parsed_pipeline);
         for (p = parsed_pipeline; p != NULL; p = p->next)
             p->cmd->words = reverse_command(p->cmd->words);
+        gen_redirects(parsed_pipeline);
         //describe_pipeline(parsed_pipeline);
         exec_pipeline(parsed_pipeline);
     }
