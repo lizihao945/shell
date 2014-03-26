@@ -98,11 +98,19 @@ void kill_job(pid_t pid) {
 
 void describe_command(simple_cmd_t *command) {
     wordlist_t *p;
+    redirect_t *q;
     p = command->words;
     printf("command: %s\n", command->words->word);
     printf("arguments: ");
     while (p = p->next)
         printf("%s ", p->word);
+    printf("\n");
+    printf("redirects: ");
+    q = command->redirects;
+    while (q) {
+        printf("%c %s", q->token_num, q->redirectee.filename);
+        q = q->next;
+    }
     printf("\n");
 }
 
@@ -214,7 +222,7 @@ void exec_cmd(simple_cmd_t *command) {
                             fd = open(tmp->redirectee.filename, flag, S_IRUSR | S_IWUSR);
                             dup2(fd, STDOUT_FILENO);
                             close(fd);
-                        break;
+                            break;
                         case '<':
                             flag = O_RDONLY;
                             fd = open(tmp->redirectee.filename, flag);
@@ -282,8 +290,8 @@ void eval_loop() {
         yyparse();
         if (parsed_command == NULL) continue;
         parsed_command->words = reverse_command(parsed_command->words);
-        //describe_command(parsed_command);
-        exec_cmd(parsed_command);
+        describe_command(parsed_command);
+        //exec_cmd(parsed_command);
     }
     free(tmp);
 }

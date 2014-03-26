@@ -111,4 +111,5 @@ redirect_t *gen_redirect(int token_num, char *filename) {
     rt = (redirect_t *) malloc(sizeof(redirect_t));
     rt->redirectee.filename = filename;
     rt->token_num = token_num;
+    rt->next = (redirect_t *)NULL;
 }
