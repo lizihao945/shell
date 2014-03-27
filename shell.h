@@ -11,6 +11,9 @@
 #define CMD_HISTORY     2003
 #define CMD_JOBS        2004
 
+#define JOB_RUNNING     3000
+#define JOB_STOPPED     3001
+
 typedef struct redirectee_st {
     int fd;
     char *filename;
@@ -46,7 +49,8 @@ typedef struct element_st {
 
 typedef struct job_st {
     struct job_st *next;
-    int pid, num;
+    int pid;
+    int status;
     char *cmd;
 } job_t;
 
