@@ -15,15 +15,16 @@
 
 // functions
 job_t *add_job(pid_t pid);
+void exec_cmd(simple_cmd_t *command);
 
 // varialbes
 struct sigaction sa_val;
 pipeline_t *parsed_pipeline;
 job_t *jobs = NULL;
 int jobs_count = 0;
-pid_t fg_pid = 0;
 char *line_str;
 int background;
+int status;
 
 char *echo_prompt() {
     char *rt, *p;
@@ -97,8 +98,6 @@ void kill_job(pid_t pid) {
         jobs = jobs->next;
     else
         last->next = p->next;
-    if (fg_pid != pid)
-        printf("\n[%d]+  Terminated\t\t\t%s\n\n", pid, p->cmd);
     free(p);
 }
 
@@ -107,50 +106,6 @@ job_t *find_job(pid_t pid) {
     for (p = jobs; p && p->pid != pid; p = p->next);
     // the process is not in the job list
     return p;
-}
-
-void sig_handler(int signo, siginfo_t *si, void *context) {
-    job_t *p;
-    switch (signo) {
-        // Ctrl + c: should be ignored
-        // if there's no foreground job
-        case SIGINT:
-            if (fg_pid != 0) return;
-            printf("\n%s", echo_prompt());
-            break;
-        // Ctrl + z: ignored if there's no fg job(won't go here)
-        case SIGTSTP:
-            p = add_job(fg_pid);
-            printf("\n[%d]+  Stopped\t\t\t%s\n", p->pid, p->cmd);
-            kill(fg_pid, SIGSTOP);
-            fg_pid = 0;
-            // ignore subsequent SIGTSTP
-            signal(SIGTSTP, SIG_IGN);
-            break;
-        case SIGTTIN:
-            printf("SIGTTIN caught!\n");
-            break;
-        // status of child process changed
-        // SIGCHLD is not handled because
-        // in that case wait won't work (!?!?)
-        case SIGCHLD:
-            switch (si->si_code) {
-                case CLD_EXITED:
-                case CLD_KILLED:
-                    kill_job(si->si_pid);
-                    fg_pid = 0;
-                    waitpid(si->si_pid, NULL, 0);
-                    break;
-                case CLD_CONTINUED:
-                    p = find_job(si->si_pid);
-                    printf("%s\n", p->cmd);
-                    break;
-                case CLD_STOPPED:
-                    break;
-                default:
-                    printf("SIGCHLD caught and not handled!\n");
-            }
-    }
 }
 
 job_t *add_job(pid_t pid) {
@@ -184,7 +139,11 @@ void describe_pipeline(pipeline_t *pipeline) {
     for (; pipeline != NULL; pipeline = pipeline->next) {
         command = pipeline->cmd;
         p = command->words;
-        printf("command: %s\n", command->words->word);
+        printf("command: %s", command->words->word);
+        if (background)
+            printf(" &\n");
+        else
+            printf("\n");
         printf("arguments: ");
         while (p = p->next)
             printf("%s ", p->word);
@@ -208,6 +167,28 @@ int wordlist_length(wordlist_t *words) {
     return count;
 }
 
+void gen_redirects(pipeline_t *pipeline) {    
+    redirect_t *p;
+    int fd[2];
+    for (; pipeline->next != NULL; pipeline = pipeline->next) {
+        pipe(fd);
+        // prev cmd writes to the write end
+        p = (redirect_t *) malloc(sizeof(redirect_t));
+        p->next = pipeline->cmd->redirects;
+        p->token_num = '>';
+        p->redirectee.fd = fd[1];
+        p->redirectee.filename = NULL;
+        pipeline->cmd->redirects = p;
+        // next cmd reads from the read end
+        p = (redirect_t *) malloc(sizeof(redirect_t));
+        p->next = pipeline->next->cmd->redirects;
+        p->token_num = '<';
+        p->redirectee.fd = fd[0];
+        p->redirectee.filename = NULL;
+        pipeline->next->cmd->redirects = p;
+    }
+}
+
 char **gen_args(wordlist_t *words) {
     char **rt;
     int i, count = wordlist_length(words);
@@ -222,36 +203,17 @@ char **gen_args(wordlist_t *words) {
     return rt;
 }
 
-void exec_fg(pid_t pid) {
+void check_on_exit() {
     job_t *p;
-    p = jobs;
-    while (p != NULL && p->pid != pid)
-        p = p->next;
-    if (p == NULL) {
-        printf("job not found!\n");
-        return;
+    for (p = jobs; p; p = p->next) {
+        waitpid(p->pid, &status, WUNTRACED | WNOHANG);
+        if (WIFSTOPPED(status)) {
+            printf("[%d]  Terminated\t\t\t%s\n", p->pid, p->cmd);   
+        }
     }
-    fg_pid = pid;
-    // ready to stop it
-    sigaction(SIGTSTP, &sa_val, NULL);
-    kill(pid, SIGCONT);
-    waitpid(pid, NULL, 0);
 }
 
-void exec_bg(pid_t pid) {
-    job_t *p;
-    p = jobs;    
-    while (p != NULL && p->pid != pid)
-        p = p->next;
-    if (p == NULL) {
-        printf("job not found!\n");
-        return;
-    }
-    printf("\n[%d]+ %s &\n", p->pid, p->cmd);
-    kill(p->pid, SIGCONT);
-    //kill(pid, SIGTTIN);
-}
-
+// builtin commands
 void exec_history() {
     HIST_ENTRY *p;
     int i = 1;
@@ -268,11 +230,111 @@ int is_built_in(simple_cmd_t *command) {
         return CMD_FG;
     else if (!strcmp(command->words->word, "bg"))
         return CMD_BG;
-    else if (!strcmp(command->words->word, "exit"))
+    else if (!strcmp(command->words->word, "exit")) {
+        check_on_exit();
         exit(0);
-    else if (!strcmp(command->words->word, "history"))
+    } else if (!strcmp(command->words->word, "history"))
         return CMD_HISTORY;
+    else if (!strcmp(command->words->word, "jobs"))
+        return CMD_JOBS;
     else return 0;
+}
+
+void exec_fg(pid_t pid) {
+    job_t *p;
+    p = jobs;
+    while (p != NULL && p->pid != pid)
+        p = p->next;
+    if (p == NULL) {
+        printf("job not found!\n");
+        return;
+    }
+    // give control
+    kill(pid, SIGCONT);
+    tcsetpgrp(STDIN_FILENO, pid);
+    //printf("foreground group is %d(should be %d)\n", tcgetpgrp(STDIN_FILENO), pid);
+    waitpid(pid, &status, WUNTRACED);
+    if (WIFEXITED(status))
+        kill_job(p->pid);
+    else if (WIFSTOPPED(status)) {
+        add_job(p->pid);
+        printf("\n[%d]  Stopped\t\t\t%s\n", p->pid, p->cmd);
+    }
+    tcsetpgrp(STDIN_FILENO, getpgrp());
+}
+
+void exec_bg(pid_t pid) {
+    job_t *p;
+    p = jobs;    
+    while (p != NULL && p->pid != pid)
+        p = p->next;
+    if (p == NULL) {
+        printf("job not found!\n");
+        return;
+    }
+    printf("[%d]  %s", p->pid, p->cmd);
+    kill(p->pid, SIGCONT);
+    waitpid(pid, &status, WUNTRACED | WNOHANG);
+    if (WIFSTOPPED(status)) {
+        add_job(p->pid);
+        printf("\n[%d]  Stopped\t\t\t%s\n", p->pid, p->cmd);
+    }
+}
+
+void exec_jobs() {
+    job_t *p;
+    for (p = jobs; p; p = p->next) {
+        waitpid(p->pid, &status, WUNTRACED | WNOHANG);
+        if (WIFSTOPPED(status))
+            printf("[%d]  Stopped\t\t\t%s\n", p->pid, p->cmd);
+        else if (WIFEXITED(status)) {
+            printf("[%d]  Terminated\t\t\t%s\n", p->pid, p->cmd);
+            kill_job(p->pid);
+        }
+    }
+}
+// builtin commands end
+
+void sig_handler(int signo, siginfo_t *si, void *context) {
+    job_t *p;
+    switch (signo) {
+        // Ctrl + c: should be ignored
+        // if there's no foreground job
+        case SIGINT:
+            printf("\n%s", echo_prompt());
+            break;
+        // SIGCHLD is not handled here
+        /*case SIGCHLD:
+            waitpid(si->si_code, NULL, WNOHANG);
+            switch (si->si_code) {
+                case CLD_EXITED:
+                case CLD_KILLED:
+                    kill_job(si->si_pid);
+                    fg_pid = 0;
+                    break;
+                case CLD_CONTINUED:
+                    p = find_job(si->si_pid);
+                    printf("%s\n", p->cmd);
+                    waitpid(si->si_pid, &status, 0);
+                    tcsetpgrp(STDIN_FILENO, getpgrp());
+                    break;
+                case CLD_STOPPED:
+                    p = find_job(si->si_pid);
+                    printf("\n[%d]  Stopped\t\t\t%s\n", p->pid, p->cmd);
+                    break;
+                default:
+                    printf("SIGCHLD caught and not handled!\n");
+            }*/
+    }
+}
+
+void print_status(int status, pid_t pid, char *cmd) {
+    if (WIFEXITED(status))
+        printf("\n[%d]  Terminated\t\t\t%s\n", pid, cmd);
+    if (WIFSTOPPED(status))
+        printf("\n[%d]  Stopped\t\t\t%s\n", pid, cmd);
+    if (WIFSIGNALED(status))
+        printf("WIFSIGNALED: true\n");
 }
 
 void exec_cmd(simple_cmd_t *command) {
@@ -291,11 +353,16 @@ void exec_cmd(simple_cmd_t *command) {
             case CMD_HISTORY:
                 exec_history();
                 break;
+            case CMD_JOBS:
+                exec_jobs();
+                break;
         }
     } else {
         if ((child_pid = fork()) < 0) {
             fprintf(stderr, "fork error!\n");
         } else if (child_pid == 0) { // child
+            signal(SIGTSTP, SIG_DFL);
+            //signal(SIGINT, SIG_DFL);
             tmp = command->redirects;
             while (tmp) {
                 // define open flag
@@ -333,7 +400,11 @@ void exec_cmd(simple_cmd_t *command) {
                 }
                 tmp = tmp->next;
             }
+            // transfer arguments
             args = gen_args(command->words);
+            // set child process to separate group
+            setpgid(0, 0);
+            // execute
             if (execvp(command->words->word, args)) {
                 switch (errno) {
                     case EACCES:
@@ -356,42 +427,28 @@ void exec_cmd(simple_cmd_t *command) {
                     close(tmp->redirectee.fd);
                 tmp = tmp->next;
             }
-            // ready to stop it
-            sigaction(SIGTSTP, &sa_val, NULL);
             if (!background) {
-                // foreground execution
-                fg_pid = child_pid;
-                waitpid(child_pid, NULL, 0);
+                // parent gives the control of terminal
+                // child is in the child_pid group
+                tcsetpgrp(STDIN_FILENO, child_pid);
+                //printf("foreground group is %d(should be %d)\n", tcgetpgrp(STDIN_FILENO), child_pid);                
+                // if SIGTSTP is sent to child
+                // shell process shuold be notified
+                waitpid(child_pid, &status, WUNTRACED);
+                if (WIFEXITED(status))
+                    kill_job(child_pid);
+                else if (WIFSTOPPED(status)) {
+                    add_job(child_pid);
+                    printf("\n[%d]  Stopped\t\t\t%s\n", child_pid, line_str);
+                }
+                tcsetpgrp(STDIN_FILENO, getpgrp());
             } else {
-                fg_pid = 0;
                 add_job(child_pid);
+                waitpid(child_pid, &status, WUNTRACED);
+                if (WIFSTOPPED(status))
+                    printf("\n[%d]  Stopped\t\t\t%s\n", child_pid, line_str);
             }
-            // update status
-            fg_pid = 0;
-            signal(SIGTSTP, SIG_IGN);
         }
-    }
-}
-
-void gen_redirects(pipeline_t *pipeline) {    
-    redirect_t *p;
-    int fd[2];
-    for (; pipeline->next != NULL; pipeline = pipeline->next) {
-        pipe(fd);
-        // prev cmd writes to the write end
-        p = (redirect_t *) malloc(sizeof(redirect_t));
-        p->next = pipeline->cmd->redirects;
-        p->token_num = '>';
-        p->redirectee.fd = fd[1];
-        p->redirectee.filename = NULL;
-        pipeline->cmd->redirects = p;
-        // next cmd reads from the read end
-        p = (redirect_t *) malloc(sizeof(redirect_t));
-        p->next = pipeline->next->cmd->redirects;
-        p->token_num = '<';
-        p->redirectee.fd = fd[0];
-        p->redirectee.filename = NULL;
-        pipeline->next->cmd->redirects = p;
     }
 }
 
@@ -400,10 +457,17 @@ void exec_pipeline(pipeline_t *pipeline) {
         exec_cmd(pipeline->cmd);
 }
 
+void check_jobs() {
+    job_t *p;
+    for (p = jobs; p; p = p->next) {
+    }
+}
+
 void eval_loop() {
     char *tmp, c;
     int i;
     pipeline_t *p;
+    printf("foreground group is %d\n", tcgetpgrp(STDIN_FILENO));
     while ((line_str = readline(echo_prompt())) != NULL) {
         add_history(line_str);
         yy_scan_string(line_str);
@@ -415,21 +479,25 @@ void eval_loop() {
         gen_redirects(parsed_pipeline);
         //describe_pipeline(parsed_pipeline);
         exec_pipeline(parsed_pipeline);
+        check_jobs();
     }
     printf("exit\n");
+    check_on_exit();
 }
 
 int main(void) {
+    // when tcsetpgrp is called by a background process,
+    // a SIGTTOU is sent to the background process group
+    signal(SIGTTOU, SIG_IGN);
+    signal(SIGTSTP, SIG_IGN);
+    //signal(SIGTTIN, SIG_IGN);
     // Specify that we will use a signal handler that takes three arguments
     // instead of one, which is the default.
     sa_val.sa_flags = SA_SIGINFO;
     sa_val.sa_sigaction = sig_handler;
     sigfillset(&sa_val.sa_mask);
     //sigaction(SIGCHLD, &sa_val, NULL);
-
-    signal(SIGTSTP, SIG_IGN);
     sigaction(SIGINT, &sa_val, NULL);
-    sigaction(SIGTTIN, &sa_val, NULL);
     line_str = (char *) malloc(sizeof(char) * FILE_LENGTH);
 	eval_loop();
 	return 0;

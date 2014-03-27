@@ -9,7 +9,6 @@
     int word_count = 0;
 %}
 
-
 %union {
     int number;
     char *word;

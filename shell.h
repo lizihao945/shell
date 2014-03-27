@@ -9,6 +9,7 @@
 #define CMD_BG          2001
 #define CMD_EXIT        2002
 #define CMD_HISTORY     2003
+#define CMD_JOBS        2004
 
 typedef struct redirectee_st {
     int fd;

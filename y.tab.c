@@ -150,7 +150,7 @@ extern int yydebug;
 typedef union YYSTYPE
 {
 /* Line 387 of yacc.c  */
-#line 13 "shell.y"
+#line 12 "shell.y"
 
     int number;
     char *word;
@@ -492,8 +492,8 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    46,    46,    50,    54,    58,    59,    62,    66,    72,
-      75,    80,    86,    87,    88,    90,    91
+       0,    45,    45,    49,    53,    57,    58,    61,    65,    71,
+      74,    79,    85,    86,    87,    89,    90
 };
 #endif
 
@@ -1388,7 +1388,7 @@ yyreduce:
     {
         case 2:
 /* Line 1787 of yacc.c  */
-#line 46 "shell.y"
+#line 45 "shell.y"
     {
                                                                                 parsed_pipeline = (yyvsp[(1) - (1)].pipeline);
                                                                                 background = 0;
@@ -1397,7 +1397,7 @@ yyreduce:
 
   case 3:
 /* Line 1787 of yacc.c  */
-#line 50 "shell.y"
+#line 49 "shell.y"
     {
                                                                                 parsed_pipeline = (yyvsp[(1) - (2)].pipeline);
                                                                                 background = 1;
@@ -1406,7 +1406,7 @@ yyreduce:
 
   case 4:
 /* Line 1787 of yacc.c  */
-#line 54 "shell.y"
+#line 53 "shell.y"
     {
                                                                                 parsed_pipeline = NULL;
                                                                             }
@@ -1414,19 +1414,19 @@ yyreduce:
 
   case 5:
 /* Line 1787 of yacc.c  */
-#line 58 "shell.y"
+#line 57 "shell.y"
     { (yyval.pipeline) = gen_pipe((yyvsp[(1) - (1)].command), (pipeline_t *)NULL); }
     break;
 
   case 6:
 /* Line 1787 of yacc.c  */
-#line 59 "shell.y"
+#line 58 "shell.y"
     { (yyval.pipeline) = gen_pipe((yyvsp[(3) - (3)].command), (yyvsp[(1) - (3)].pipeline)); }
     break;
 
   case 7:
 /* Line 1787 of yacc.c  */
-#line 62 "shell.y"
+#line 61 "shell.y"
     {
                                                                                 (yyval.command) = (yyvsp[(1) - (1)].command);
                                                                                 (yyval.command)->redirects = (redirect_t *)NULL;
@@ -1435,7 +1435,7 @@ yyreduce:
 
   case 8:
 /* Line 1787 of yacc.c  */
-#line 66 "shell.y"
+#line 65 "shell.y"
     {
                                                                                 (yyval.command) = (yyvsp[(1) - (2)].command);
                                                                                 (yyval.command)->redirects = (yyvsp[(2) - (2)].redirect);
@@ -1444,7 +1444,7 @@ yyreduce:
 
   case 9:
 /* Line 1787 of yacc.c  */
-#line 72 "shell.y"
+#line 71 "shell.y"
     {
                                                                                 (yyval.command) = gen_simple_cmd((yyvsp[(1) - (1)].element), (simple_cmd_t *)0);
                                                                             }
@@ -1452,7 +1452,7 @@ yyreduce:
 
   case 10:
 /* Line 1787 of yacc.c  */
-#line 75 "shell.y"
+#line 74 "shell.y"
     {
                                                                                 (yyval.command) = gen_simple_cmd((yyvsp[(2) - (2)].element), (yyvsp[(1) - (2)].command));
                                                                             }
@@ -1460,7 +1460,7 @@ yyreduce:
 
   case 11:
 /* Line 1787 of yacc.c  */
-#line 80 "shell.y"
+#line 79 "shell.y"
     {
                                                                                 (yyval.element).word = (yyvsp[(1) - (1)].word);
                                                                                 (yyval.element).redirect = 0;
@@ -1469,31 +1469,31 @@ yyreduce:
 
   case 12:
 /* Line 1787 of yacc.c  */
-#line 86 "shell.y"
+#line 85 "shell.y"
     { (yyval.redirect) = gen_redirect('>', (yyvsp[(2) - (2)].word)); }
     break;
 
   case 13:
 /* Line 1787 of yacc.c  */
-#line 87 "shell.y"
+#line 86 "shell.y"
     { (yyval.redirect) = gen_redirect('<', (yyvsp[(2) - (2)].word)); }
     break;
 
   case 14:
 /* Line 1787 of yacc.c  */
-#line 88 "shell.y"
+#line 87 "shell.y"
     { (yyval.redirect) = gen_redirect(RE_DLESS, (yyvsp[(2) - (2)].word)); }
     break;
 
   case 15:
 /* Line 1787 of yacc.c  */
-#line 90 "shell.y"
+#line 89 "shell.y"
     { (yyval.redirect) = (yyvsp[(1) - (1)].redirect); }
     break;
 
   case 16:
 /* Line 1787 of yacc.c  */
-#line 91 "shell.y"
+#line 90 "shell.y"
     {
                                                                                 // append the redirect to the end
                                                                                 redirect_t *tmp;
@@ -1738,7 +1738,7 @@ yyreturn:
 
 
 /* Line 2050 of yacc.c  */
-#line 100 "shell.y"
+#line 99 "shell.y"
 
 
 void yyerror(char *s) {

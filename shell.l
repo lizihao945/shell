@@ -13,7 +13,7 @@
 ">&"											{ return GREATAND; }
 "<>"											{ return LESSGREAT; }
 "<<-"											{ return DLESSDASH; }
-[0-9\".a-zA-Z\-/_]+									{ 
+[0-9\".a-zA-Z\-/_]+								{ 
 													yylval.word = (char *) malloc(sizeof(char) * FILE_LENGTH);
 													strcpy(yylval.word, yytext);
 													return WORD;
