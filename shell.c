@@ -206,10 +206,10 @@ char **gen_args(wordlist_t *words) {
 void check_on_exit() {
     job_t *p;
     for (p = jobs; p; p = p->next) {
-        waitpid(p->pid, &status, WUNTRACED | WNOHANG);
-        if (WIFSTOPPED(status)) {
-            printf("[%d]  Terminated\t\t\t%s\n", p->pid, p->cmd);   
-        }
+        if (waitpid(p->pid, &status, WUNTRACED | WNOHANG))
+            if (WIFSTOPPED(status)) {
+                printf("[%d]  Terminated\t\t\t%s\n", p->pid, p->cmd);   
+            }
     }
 }
 
@@ -272,25 +272,25 @@ void exec_bg(pid_t pid) {
         printf("job not found!\n");
         return;
     }
-    printf("[%d]  %s", p->pid, p->cmd);
+    printf("\n[%d]  Continued\t\t\t%s\n", p->pid, p->cmd);
     kill(p->pid, SIGCONT);
-    waitpid(pid, &status, WUNTRACED | WNOHANG);
-    if (WIFSTOPPED(status)) {
-        add_job(p->pid);
-        printf("\n[%d]  Stopped\t\t\t%s\n", p->pid, p->cmd);
-    }
+    if (waitpid(pid, &status, WUNTRACED | WNOHANG))
+        if (WIFSTOPPED(status)) {
+            add_job(p->pid);
+            printf("\n[%d]  Stopped\t\t\t%s\n", p->pid, p->cmd);
+        }
 }
 
 void exec_jobs() {
     job_t *p;
     for (p = jobs; p; p = p->next) {
-        waitpid(p->pid, &status, WUNTRACED | WNOHANG);
-        if (WIFSTOPPED(status))
-            printf("[%d]  Stopped\t\t\t%s\n", p->pid, p->cmd);
-        else if (WIFEXITED(status)) {
-            printf("[%d]  Terminated\t\t\t%s\n", p->pid, p->cmd);
-            kill_job(p->pid);
-        }
+        if (waitpid(p->pid, &status, WUNTRACED | WNOHANG))
+            if (WIFSTOPPED(status))
+                printf("[%d]  Stopped\t\t\t%s\n", p->pid, p->cmd);
+            else if (WIFEXITED(status)) {
+                printf("[%d]  Terminated\t\t\t%s\n", p->pid, p->cmd);
+                kill_job(p->pid);
+            }
     }
 }
 // builtin commands end
@@ -389,11 +389,11 @@ void exec_cmd(simple_cmd_t *command) {
                 } else {
                     fd = tmp->redirectee.fd;
                     if (tmp->token_num == '>') {
-                        printf("%s: write to %d\n", command->words->word, fd);
+                        //printf("%s: write to %d\n", command->words->word, fd);
                         dup2(fd, STDOUT_FILENO);
                         close(fd);
                     } else {
-                        printf("%s: read from %d\n", command->words->word, fd);
+                        //printf("%s: read from %d\n", command->words->word, fd);
                         dup2(fd, STDIN_FILENO);
                         close(fd);
                     }
@@ -467,7 +467,7 @@ void eval_loop() {
     char *tmp, c;
     int i;
     pipeline_t *p;
-    printf("foreground group is %d\n", tcgetpgrp(STDIN_FILENO));
+    //printf("foreground group is %d\n", tcgetpgrp(STDIN_FILENO));
     while ((line_str = readline(echo_prompt())) != NULL) {
         add_history(line_str);
         yy_scan_string(line_str);
