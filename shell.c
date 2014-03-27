@@ -253,13 +253,13 @@ void exec_fg(pid_t pid) {
     kill(pid, SIGCONT);
     tcsetpgrp(STDIN_FILENO, pid);
     //printf("foreground group is %d(should be %d)\n", tcgetpgrp(STDIN_FILENO), pid);
-    waitpid(pid, &status, WUNTRACED);
-    if (WIFEXITED(status))
-        kill_job(p->pid);
-    else if (WIFSTOPPED(status)) {
-        add_job(p->pid);
-        printf("\n[%d]  Stopped\t\t\t%s\n", p->pid, p->cmd);
-    }
+    if (waitpid(pid, &status, WUNTRACED))
+        if (WIFEXITED(status))
+            kill_job(p->pid);
+        else if (WIFSTOPPED(status)) {
+            add_job(p->pid);
+            printf("\n[%d]  Stopped\t\t\t%s\n", p->pid, p->cmd);
+        }
     tcsetpgrp(STDIN_FILENO, getpgrp());
 }
 
@@ -284,13 +284,15 @@ void exec_bg(pid_t pid) {
 void exec_jobs() {
     job_t *p;
     for (p = jobs; p; p = p->next) {
-        if (waitpid(p->pid, &status, WUNTRACED | WNOHANG))
+        if (waitpid(p->pid, &status, WNOHANG)) {
             if (WIFSTOPPED(status))
                 printf("[%d]  Stopped\t\t\t%s\n", p->pid, p->cmd);
             else if (WIFEXITED(status)) {
                 printf("[%d]  Terminated\t\t\t%s\n", p->pid, p->cmd);
                 kill_job(p->pid);
             }
+        } else // status not available
+            printf("[%d]  Running\t\t\t%s\n", p->pid, p->cmd);
     }
 }
 // builtin commands end
@@ -434,19 +436,20 @@ void exec_cmd(simple_cmd_t *command) {
                 //printf("foreground group is %d(should be %d)\n", tcgetpgrp(STDIN_FILENO), child_pid);                
                 // if SIGTSTP is sent to child
                 // shell process shuold be notified
-                waitpid(child_pid, &status, WUNTRACED);
-                if (WIFEXITED(status))
-                    kill_job(child_pid);
-                else if (WIFSTOPPED(status)) {
-                    add_job(child_pid);
-                    printf("\n[%d]  Stopped\t\t\t%s\n", child_pid, line_str);
-                }
+                if (waitpid(child_pid, &status, WUNTRACED))
+                    if (WIFEXITED(status))
+                        kill_job(child_pid);
+                    else if (WIFSTOPPED(status)) {
+                        add_job(child_pid);
+                        printf("\n[%d]  Stopped\t\t\t%s\n", child_pid, line_str);
+                    }
                 tcsetpgrp(STDIN_FILENO, getpgrp());
             } else {
+                printf("\n[%d]  %s\n", child_pid, line_str);
                 add_job(child_pid);
-                waitpid(child_pid, &status, WUNTRACED);
-                if (WIFSTOPPED(status))
-                    printf("\n[%d]  Stopped\t\t\t%s\n", child_pid, line_str);
+                if (waitpid(child_pid, &status, WUNTRACED | WNOHANG))
+                    if (WIFSTOPPED(status))
+                        printf("\n[%d]  Stopped\t\t\t%s\n", child_pid, line_str);
             }
         }
     }
