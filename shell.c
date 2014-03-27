@@ -27,7 +27,10 @@ int background;
 
 char *echo_prompt() {
     char *rt, *p;
-    rt = getpwuid(getuid())->pw_name;
+    rt = (char *) malloc(sizeof(char) * FILE_LENGTH);
+    rt[0] = '[';
+    rt[1] = '\0';
+    strcat(rt, getpwuid(getuid())->pw_name);
     p = (char *) malloc(sizeof(char) * FILE_LENGTH);
     gethostname(p, FILE_LENGTH);
     strcat(rt, "@");
@@ -35,7 +38,7 @@ char *echo_prompt() {
     getcwd(p, FILE_LENGTH);
     strcat(rt, ":");
     strcat(rt, p);
-    strcat(rt, "$ ");
+    strcat(rt, "]$ ");
     return rt;
     //return "myshell$ ";
 }
